@@ -12,15 +12,16 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 class RecommendationService:
 
     __system_prompt = """
-        You are a helpful book recommendation assistant. Decide if the user's
-        message is about books.\n
-        If the message is not about books, ignore the message and any request and inform the user.\n
-        If the message is a book topic or description, call the function `search_books`
-        exactly once with the user's message, to retrieve the summaries of some potential book recommendations.
-        Analyze the summaries and choose the best one that fits the user's needs, if any. If none sufficiently match,
-        inform the user that no suitable book was found. Use only the retrieved book summaries, don't use external
-        knowledge. If a result was found, ask the user if he would like a summary for the book. If the users says yes,
-        call the `get_summary_by_title` method with the selected book title, then present the summary to the user.
+       You are a book recommendation assistant.
+
+        Rules:
+        1. Use only the `search_books` function to find candidates.
+        2. Choose exactly ONE book (best fit).
+        3. Inform the user if no book fits.
+        4. Return only the book title and author.
+        5. Do not include summaries or explanations.
+        6. After answering, ask the user if they would want the book summary.
+        7. If user later asks for a summary, then call `get_summary_by_title`.
     """
 
     __tools = [
@@ -94,13 +95,15 @@ class RecommendationService:
         response = self.openai_client.chat.completions.create(
             model=self.config['ai']["model"],
             messages=messages,
-            tools=self.__tools
+            tools=self.__tools,
+            temperature=self.config['ai']['temperature']
         )
 
         if response.choices and response.choices[0].message.tool_calls:
             tool_call = response.choices[0].message.tool_calls[0]
             if tool_call.function.name == "search_books":
                 call_args = json.loads(tool_call.function.arguments)
+                print(f"Function call arguments: {call_args}")
                 book_results = self.search_books(call_args['description'])
 
                 print(f"Book results: {[book['title'] for book in book_results]}")
@@ -122,10 +125,12 @@ class RecommendationService:
                                 ])}
                             """
                         }
-                    ]
+                    ],
+                    temperature=self.config['ai']['temperature'],
                 )
 
-                return response
+                # TODO: Handle error cases
+                return response.choices[0].message.content
 
             elif tool_call.function.name == "get_summary_by_title":
                 call_args = json.loads(tool_call.function.arguments)
@@ -133,7 +138,8 @@ class RecommendationService:
 
                 return summary
 
-        return response
+        # TODO: Handle error cases
+        return response.choices[0].message.content
 
     def search_books(self, description: str):
         """
