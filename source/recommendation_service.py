@@ -15,13 +15,23 @@ class RecommendationService:
        You are a book recommendation assistant.
 
         Rules:
-        1. Use only the `search_books` function to find candidates.
-        2. Choose exactly ONE book (best fit).
-        3. Inform the user if no book fits.
-        4. Return only the book title and author.
-        5. Do not include summaries or explanations.
-        6. After answering, ask the user if they would want the book summary.
-        7. If user later asks for a summary, then call `get_summary_by_title`.
+        1. If the request is NOT about books OR book recommendations:
+        - You MUST NOT call ANY functions (including `search_books`).
+        - You MUST NOT invent or suggest a book.
+        - Reply only with this exact sentence: "I can only help with book recommendations."
+        - After replying, STOP. Do not continue with any other rules.
+
+        2. If the request IS about BOOKS:
+        - Use ONLY the `search_books` function to find candidates.
+        - Choose exactly ONE book (best fit).
+        - If no book fits, say: "I couldn't find a suitable book."
+        - Return ONLY the title and author. Format: {"title":"...", "author":"..."}
+        - Do not include summaries or explanations.
+        - After replying, ask: "Would you like a summary of this book?"
+
+        3. If the user later asks for a summary:
+        - Call `get_summary_by_title` with the chosen book title.
+        - Return ONLY the summary text.
     """
 
     __tools = [
@@ -96,7 +106,8 @@ class RecommendationService:
             model=self.config['ai']["model"],
             messages=messages,
             tools=self.__tools,
-            temperature=self.config['ai']['temperature']
+            temperature=self.config['ai']['temperature'],
+            max_completion_tokens=self.config['ai']['max_output_tokens']
         )
 
         if response.choices and response.choices[0].message.tool_calls:
@@ -127,10 +138,13 @@ class RecommendationService:
                         }
                     ],
                     temperature=self.config['ai']['temperature'],
+                    max_completion_tokens=self.config['ai']['max_output_tokens']
                 )
 
-                # TODO: Handle error cases
-                return response.choices[0].message.content
+                try:
+                    return response.choices[0].message.content
+                except Exception as e:
+                    raise RuntimeError(f"Failed to process model response: {e}")
 
             elif tool_call.function.name == "get_summary_by_title":
                 call_args = json.loads(tool_call.function.arguments)
@@ -138,8 +152,10 @@ class RecommendationService:
 
                 return summary
 
-        # TODO: Handle error cases
-        return response.choices[0].message.content
+        try:
+            return response.choices[0].message.content
+        except Exception as e:
+            raise RuntimeError(f"Failed to process model response: {e}")
 
     def search_books(self, description: str):
         """

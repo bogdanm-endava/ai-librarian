@@ -1,7 +1,9 @@
 from flask import Flask, request
+from flask_cors import CORS
 from recommendation_service import RecommendationService
 
 app = Flask(__name__)
+CORS(app)
 
 recommendation_service = RecommendationService()
 
@@ -27,16 +29,18 @@ def chat():
                 "error": "Request body does not match the expected format."
             }, 400
 
-    print(data)
+    try:
+        service_response = recommendation_service.call_model(
+            data['query'],
+            data['history']
+        )
 
-    service_response = recommendation_service.call_model(
-        data['query'],
-        data['history']
-    )
-
-    print(service_response)
-
-    return {
-        "payload": service_response,
-        "error": None
-    }
+        return {
+            "payload": service_response,
+            "error": None
+        }
+    except Exception as e:
+        return {
+            "payload": None,
+            "error": str(e)
+        }, 500
