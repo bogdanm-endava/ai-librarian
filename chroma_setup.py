@@ -20,11 +20,7 @@ client = HttpClient(
 
 print('Connected to ChromaDB.')
 
-embedding_function = embedding_functions.OpenAIEmbeddingFunction(
-    api_key=openai_api_key,
-    model_name=config['ai']['embedding_model'],
-    api_base=config['ai']['endpoint_url']
-)
+embedding_function = embedding_functions.DefaultEmbeddingFunction()
 
 try:
     print('Creating ChromaDB collection...')
