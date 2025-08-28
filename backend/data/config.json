@@ -1,14 +1,14 @@
 {
     "chromadb": {
         "chromadb_store_path": "data/chromadb",
-        "chromadb_server_host": "localhost",
+        "chromadb_server_host": "chromadb",
         "chromadb_server_port": 8000
     },
     "summaries": {
         "summaries_path": "data/summaries.json"
     },
     "ai": {
-        "endpoint_url": "http://localhost:8080/v1",
+        "endpoint_url": "http://localai:8080/v1",
         "model": "qwen3-0.6b",
         "temperature": 0.2,
         "max_output_tokens": 1024

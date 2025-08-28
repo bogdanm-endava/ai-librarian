@@ -62,12 +62,16 @@ export default function BookRecommendationAssistant() {
 
             const data = await response.json();
 
+            let content =
+                data.error !== null
+                    ? `Sorry, there was an error: ${data.error}`
+                    : data.payload;
+
+            content = content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+
             const assistantMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                content:
-                    data.error !== null
-                        ? `Sorry, there was an error: ${data.error}`
-                        : data.payload,
+                content,
                 isUser: false,
                 timestamp: new Date(),
             };

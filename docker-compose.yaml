@@ -1,0 +1,49 @@
+# docker-compose.yml
+name: ai-librarian
+services:
+    frontend:
+        image: node:24.6
+        working_dir: /app
+        volumes:
+            - ./frontend:/app
+        command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173 --strictPort"
+        ports: ["5173:5173"]
+        environment:
+            - VITE_API_BASE=http://backend:5000
+        depends_on: [backend]
+
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile
+        volumes:
+            - ./backend:/app
+        ports: ["5000:5000"]
+        environment:
+            - CHROMA_HOST=chromadb
+            - CHROMA_PORT=8000
+            - LOCALAI_URL=http://localai:8080
+        depends_on: [chromadb, localai]
+
+    chromadb:
+        image: chromadb/chroma:latest
+        volumes:
+            - ./backend/data/chroma:/data
+        ports: ["8000:8000"]
+        healthcheck:
+            test:
+                ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+            interval: 10s
+            timeout: 3s
+            retries: 10
+
+    localai:
+        image: localai/localai:latest-cpu
+        ports: ["8080:8080"]
+        environment:
+            - PRELOAD_MODELS=[{"id":"qwen3-0.6b"}]
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8080/models"]
+            interval: 10s
+            timeout: 3s
+            retries: 10
