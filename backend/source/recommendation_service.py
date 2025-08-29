@@ -241,5 +241,6 @@ class RecommendationService:
         return "Summary not found."
 
     def __load_config(self) -> dict:
-        with open("data/config.json") as f:
+        config_path = os.path.join(ROOT_DIR, "config.json")
+        with open(config_path) as f:
             return json.load(f)

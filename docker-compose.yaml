@@ -8,8 +8,6 @@ services:
             - ./frontend:/app
         command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173 --strictPort"
         ports: ["5173:5173"]
-        environment:
-            - VITE_API_BASE=http://backend:5000
         depends_on: [backend]
 
     backend:
@@ -19,10 +17,6 @@ services:
         volumes:
             - ./backend:/app
         ports: ["5000:5000"]
-        environment:
-            - CHROMA_HOST=chromadb
-            - CHROMA_PORT=8000
-            - LOCALAI_URL=http://localai:8080
         depends_on: [chromadb, localai]
 
     chromadb:

@@ -6,7 +6,10 @@ from chromadb import HttpClient
 from chromadb.utils import embedding_functions
 
 load_dotenv()
-config = json.load(open("data/config.json"))
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(script_dir, "config.json")
+config = json.load(open(config_path))
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 summaries_path = config["summaries"]["summaries_path"]
